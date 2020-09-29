@@ -157,14 +157,14 @@ contract Adventure is ERC20Detailed {
     return true;
   }
 
-  function upAllowance(address spender, uint256 addedValue) public returns (bool) {
+  function increaseAllowance(address spender, uint256 addedValue) public returns (bool) {
     require(spender != address(0));
     _allowed[msg.sender][spender] = (_allowed[msg.sender][spender].add(addedValue));
     emit Approval(msg.sender, spender, _allowed[msg.sender][spender]);
     return true;
   }
 
-  function downAllowance(address spender, uint256 subtractedValue) public returns (bool) {
+  function decreaseAllowance(address spender, uint256 subtractedValue) public returns (bool) {
     require(spender != address(0));
     _allowed[msg.sender][spender] = (_allowed[msg.sender][spender].sub(subtractedValue));
     emit Approval(msg.sender, spender, _allowed[msg.sender][spender]);
