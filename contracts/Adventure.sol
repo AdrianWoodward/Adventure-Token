@@ -86,11 +86,27 @@ contract Adventure is ERC20Detailed {
   string constant tokenName = "Adventure";
   string constant tokenSymbol = "TWA";
   uint8  constant tokenDecimals = 18;
+//   address constant twaFoundation = 0xD5677663C673cB48b05a4d51514ebdcb30FA4234;
+//   address constant twaCommunity = 0xC5a0EAdd963cBb0F7E9A6F5753f6bFAD12df1BaA;
+//   address constant twaMarketing = 0xc77019fE9825E65F56F4C079d010944C3ea1B598;
+  address public twaFoundation = 0x7D6c6B479b247f3DEC1eDfcC4fAf56c5Ff9A5F40;
+  address public twaCommunity = 0x0921B5A15c48C7a3A30A7d9Bd0cC2425801D59DC;
+  address public twaMarketing = 0x567157ffD7012c19f9bD900A9b280D839041acd4;
+  uint twaMarketingLockedUntilBlock;
   uint256 _totalSupply = 101000000000000000000000000;
   uint256 public basePercent = 100;
 
   constructor() public payable ERC20Detailed(tokenName, tokenSymbol, tokenDecimals) {
-    _issue(msg.sender, _totalSupply);
+    _issue(twaFoundation, 30000000000000000000000000);
+    _issue(twaCommunity, 55000000000000000000000000);
+    _issue(twaMarketing, 16000000000000000000000000);
+    
+    // 24 months with an average block time of 13 seconds is 4851692 blocks
+    twaMarketingLockedUntilBlock = block.number.add(4851692);
+  }
+  
+  function getTwaMarketingLockedUntilBlock() public view returns (uint256) {
+      return twaMarketingLockedUntilBlock;
   }
 
   function totalSupply() public override view returns (uint256) {
@@ -114,6 +130,7 @@ contract Adventure is ERC20Detailed {
   function transfer(address to, uint256 value) public override returns (bool) {
     require(value <= _balances[msg.sender]);
     require(to != address(0));
+    require(canTransact(msg.sender) == true);
 
     uint256 tokensToBurn = cut(value);
     uint256 tokensToTransfer = value.sub(tokensToBurn);
@@ -131,7 +148,7 @@ contract Adventure is ERC20Detailed {
 
   function approve(address spender, uint256 value) public override returns (bool) {
     require(spender != address(0));
-    _allowed[msg.sender][spender] = value;
+    require(canTransact(msg.sender) == true);
     emit Approval(msg.sender, spender, value);
     return true;
   }
@@ -140,6 +157,7 @@ contract Adventure is ERC20Detailed {
     require(value <= _balances[from]);
     require(value <= _allowed[from][msg.sender]);
     require(to != address(0));
+    require(canTransact(from) == true);
 
     _balances[from] = _balances[from].sub(value);
 
@@ -193,5 +211,17 @@ contract Adventure is ERC20Detailed {
     require(amount <= _allowed[account][msg.sender]);
     _allowed[account][msg.sender] = _allowed[account][msg.sender].sub(amount);
     _destroy(account, amount);
+  }
+   
+  function canTransact(address account) public view returns (bool) {
+      if (account != twaFoundation) {
+          return true;
+      }
+      
+      if (block.number < twaMarketingLockedUntilBlock) {
+        return false;
+      }
+      
+      return true;
   }
 }
