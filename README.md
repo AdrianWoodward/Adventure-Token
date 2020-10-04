@@ -2,8 +2,6 @@
 
 > Repo for the Adventure Token (TWA)
 
-**⚠️ Any contracts in this repo are under development. They are not ready for production deployment. ⚠️**
-
 ## Testing
 
 This project utilizes [Truffle Suite](https://www.trufflesuite.com/) to automate testing.
