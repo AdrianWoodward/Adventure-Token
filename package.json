@@ -1,0 +1,36 @@
+{
+  "name": "adventure-token",
+  "version": "1.0.0",
+  "description": "> Repo for the Adventure Token (TWA)",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prettier": "pretty-quick --pattern \"**/*.*(js|jsx)\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AdrianWoodward/Adventure-Token.git"
+  },
+  "keywords": [
+    "adventure",
+    "token",
+    "twa",
+    "ethereum",
+    "solidity",
+    "erc20"
+  ],
+  "author": "",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/AdrianWoodward/Adventure-Token/issues"
+  },
+  "homepage": "https://github.com/AdrianWoodward/Adventure-Token#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "prettier": "^2.1.2",
+    "pretty-quick": "^3.0.2"
+  }
+}
