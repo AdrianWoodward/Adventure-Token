@@ -3,7 +3,7 @@ pragma solidity >= 0.6.0 < 0.7.0;
 
 /*
 *  Adventure.sol
-*  TWA V1 deflationary index token smart contract
+*  TWA V1 deflationary community token smart contract
 *  2020-09-29
 **/
 
@@ -87,7 +87,7 @@ contract Adventure is ERC20Detailed {
   string constant tokenSymbol = "TWA";
   uint8  constant tokenDecimals = 18;
   address public twaFoundation;
-  address public twaCommunity = 0xC5a0EAdd963cBb0F7E9A6F5753f6bFAD12df1BaA;
+  address public twaCommunity = 0x941478BBB008979019FF2fE9b44e54899C353894;
   address public twaMarketingDevLiq = 0xc77019fE9825E65F56F4C079d010944C3ea1B598;
   uint public twaFoundationLockedUntil;
   uint256 _totalSupply = 101000000000000000000000000;
