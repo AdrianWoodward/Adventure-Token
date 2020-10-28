@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-pragma solidity >= 0.6.0 < 0.7.0;
+pragma solidity 0.6.12;
 
 /*
 *  Adventure.sol
@@ -83,49 +83,49 @@ contract Adventure is ERC20Detailed {
   mapping (address => uint256) private _balances;
   mapping (address => mapping (address => uint256)) private _allowed;
 
-  string constant tokenName = "Adventure";
-  string constant tokenSymbol = "TWA";
-  uint8  constant tokenDecimals = 18;
+  string constant TOKEN_NAME = "Adventure";
+  string constant TOKEN_SYMBOL = "TWA";
+  uint8  constant TOKEN_DECIMALS = 18;
   address public twaFoundation;
-  address public twaCommunity = 0x941478BBB008979019FF2fE9b44e54899C353894;
-  address public twaMarketingDevLiq = 0xc77019fE9825E65F56F4C079d010944C3ea1B598;
-  uint public twaFoundationLockedUntil;
+  address constant public TWA_COMMUNITY = 0x941478BBB008979019FF2fE9b44e54899C353894;
+  address constant public TWA_MARKETING_DEV_LIQ = 0xc77019fE9825E65F56F4C079d010944C3ea1B598;
+  uint public immutable twaFoundationLockedUntil;
   uint256 _totalSupply = 101000000000000000000000000;
-  uint256 public basePercent = 100;
+  uint256 constant BASE_PERCENT = 100;
 
-  constructor() public payable ERC20Detailed(tokenName, tokenSymbol, tokenDecimals) {
+  constructor() public payable ERC20Detailed(TOKEN_NAME, TOKEN_SYMBOL, TOKEN_DECIMALS) {
     twaFoundation = msg.sender;
 
     _issue(twaFoundation, 30000000000000000000000000);
-    _issue(twaCommunity, 55000000000000000000000000);
-    _issue(twaMarketingDevLiq, 16000000000000000000000000);
+    _issue(TWA_COMMUNITY, 55000000000000000000000000);
+    _issue(TWA_MARKETING_DEV_LIQ, 16000000000000000000000000);
     
     // 24 months is 63115200 seconds
     twaFoundationLockedUntil = now + 63115200;
   }
 
-  function totalSupply() public override view returns (uint256) {
+  function totalSupply() external override view returns (uint256) {
     return _totalSupply;
   }
 
-  function balanceOf(address owner) public override view returns (uint256) {
+  function balanceOf(address owner) external override view returns (uint256) {
     return _balances[owner];
   }
 
-  function allowance(address owner, address spender) public override view returns (uint256) {
+  function allowance(address owner, address spender) external override view returns (uint256) {
     return _allowed[owner][spender];
   }
 
-  function cut(uint256 value) public view returns (uint256)  {
-    uint256 roundValue = value.ceil(basePercent);
-    uint256 cutValue = roundValue.mul(basePercent).div(10000);
+  function cut(uint256 value) public pure returns (uint256)  {
+    uint256 roundValue = value.ceil(BASE_PERCENT);
+    uint256 cutValue = roundValue.mul(BASE_PERCENT).div(10000);
     return cutValue;
   }
 
-  function transfer(address to, uint256 value) public override returns (bool) {
+  function transfer(address to, uint256 value) external override returns (bool) {
     require(value <= _balances[msg.sender]);
     require(to != address(0));
-    require(canTransact(msg.sender) == true);
+    require(canTransact(msg.sender));
 
     uint256 tokensToBurn = cut(value);
     uint256 tokensToTransfer = value.sub(tokensToBurn);
@@ -141,18 +141,18 @@ contract Adventure is ERC20Detailed {
   }
 
 
-  function approve(address spender, uint256 value) public override returns (bool) {
+  function approve(address spender, uint256 value) external override returns (bool) {
     require(spender != address(0));
-    require(canTransact(msg.sender) == true);
+    require(canTransact(msg.sender));
     emit Approval(msg.sender, spender, value);
     return true;
   }
 
-  function transferFrom(address from, address to, uint256 value) public override returns (bool) {
+  function transferFrom(address from, address to, uint256 value) external override returns (bool) {
     require(value <= _balances[from]);
     require(value <= _allowed[from][msg.sender]);
     require(to != address(0));
-    require(canTransact(from) == true);
+    require(canTransact(from));
 
     _balances[from] = _balances[from].sub(value);
 
@@ -170,14 +170,14 @@ contract Adventure is ERC20Detailed {
     return true;
   }
 
-  function increaseAllowance(address spender, uint256 addedValue) public returns (bool) {
+  function increaseAllowance(address spender, uint256 addedValue) external returns (bool) {
     require(spender != address(0));
     _allowed[msg.sender][spender] = (_allowed[msg.sender][spender].add(addedValue));
     emit Approval(msg.sender, spender, _allowed[msg.sender][spender]);
     return true;
   }
 
-  function decreaseAllowance(address spender, uint256 subtractedValue) public returns (bool) {
+  function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool) {
     require(spender != address(0));
     _allowed[msg.sender][spender] = (_allowed[msg.sender][spender].sub(subtractedValue));
     emit Approval(msg.sender, spender, _allowed[msg.sender][spender]);
