@@ -87,8 +87,8 @@ contract Adventure is ERC20Detailed {
   string constant TOKEN_SYMBOL = "TWA";
   uint8  constant TOKEN_DECIMALS = 18;
   address public twaFoundation;
-  address constant public TWA_COMMUNITY = 0x941478BBB008979019FF2fE9b44e54899C353894;
-  address constant public TWA_MARKETING_DEV_LIQ = 0xc77019fE9825E65F56F4C079d010944C3ea1B598;
+  address constant public TWA_COMMUNITY = 0x99ee7AEd55c08c5CC19CF3655439E4d8e8de4ce1;
+  address constant public TWA_MARKETING_DEV_LIQ = 0x8f012CD662fc117dc21bCbf4A52b5052BF7a4D4E;
   uint public immutable twaFoundationLockedUntil;
   uint256 _totalSupply = 101000000000000000000000000;
   uint256 constant BASE_PERCENT = 100;
@@ -144,6 +144,7 @@ contract Adventure is ERC20Detailed {
   function approve(address spender, uint256 value) external override returns (bool) {
     require(spender != address(0));
     require(canTransact(msg.sender));
+    _allowed[msg.sender][spender] = value;
     emit Approval(msg.sender, spender, value);
     return true;
   }
