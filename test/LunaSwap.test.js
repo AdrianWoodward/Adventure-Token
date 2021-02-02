@@ -101,73 +101,73 @@ contract("LunaSwap", async (accounts) => {
     });
   });
 
-  describe("swapEthToLuna", () => {
-    it("calcSwapEthToLunaInputs", async () => {
-      const ethAmount = new BigNumber('1000000000000000000').toString(10); // 1 ether
-      const slippage = new BigNumber('40000000000000000').toString(10); // 4%
-      const result = await instance.calcSwapEthToLunaInputs(ethAmount, poolTokens, slippage);
+  // describe("swapEthToLuna", () => {
+  //   it("calcSwapEthToLunaInputs", async () => {
+  //     const ethAmount = new BigNumber('1000000000000000000').toString(10); // 1 ether
+  //     const slippage = new BigNumber('40000000000000000').toString(10); // 4%
+  //     const result = await instance.calcSwapEthToLunaInputs(ethAmount, poolTokens, slippage);
 
-      for (let i = 0; i < poolTokens.length; i++) {
-        console.log('tokensInLuna[' + poolTokenSymbols[i] +']: ', divByDecimal(result['tokensInLuna'][i], poolTokenDecimals[i]));
-      }
-      for (let i = 0; i < poolTokens.length; i++) {
-        console.log('ethInUniswap[' + poolTokenSymbols[i] +']: ', divByDecimal(result['ethInUniswap'][i]));
-      }
-      console.log('poolOut: ', divByDecimal(result['poolOut']));
-    });
+  //     for (let i = 0; i < poolTokens.length; i++) {
+  //       console.log('tokensInLuna[' + poolTokenSymbols[i] +']: ', divByDecimal(result['tokensInLuna'][i], poolTokenDecimals[i]));
+  //     }
+  //     for (let i = 0; i < poolTokens.length; i++) {
+  //       console.log('ethInUniswap[' + poolTokenSymbols[i] +']: ', divByDecimal(result['ethInUniswap'][i]));
+  //     }
+  //     console.log('poolOut: ', divByDecimal(result['poolOut']));
+  //   });
 
-    it("calcNeedEthToPoolOut", async () => {
-      const amountOut = new BigNumber('1000000000000000000').toString(10); // 1 ether
-      const slippage = new BigNumber('40000000000000000').toString(10); // 4%
-      const result = await instance.calcNeedEthToPoolOut(amountOut, slippage);
+  //   it("calcNeedEthToPoolOut", async () => {
+  //     const amountOut = new BigNumber('1000000000000000000').toString(10); // 1 ether
+  //     const slippage = new BigNumber('40000000000000000').toString(10); // 4%
+  //     const result = await instance.calcNeedEthToPoolOut(amountOut, slippage);
 
-      console.log('eth out: ', divByDecimal(result));
-    });
+  //     console.log('eth out: ', divByDecimal(result));
+  //   });
 
-    it("getAmountOutForUniswap", async () => {
-      const uniswapPairFor = await instance.uniswapPairFor('0x514910771AF9Ca656af840dff83E8264EcF986CA');
-      const result = await instance.getAmountOutForUniswap(uniswapPairFor, '96000000000000000', false);
-      console.log('Token amount out: ', divByDecimal(result['amountOut']));
-    });
+  //   it("getAmountOutForUniswap", async () => {
+  //     const uniswapPairFor = await instance.uniswapPairFor('0x514910771AF9Ca656af840dff83E8264EcF986CA');
+  //     const result = await instance.getAmountOutForUniswap(uniswapPairFor, '96000000000000000', false);
+  //     console.log('Token amount out: ', divByDecimal(result['amountOut']));
+  //   });
 
-    it("swapEthToLuna", async () => {
-      const ethAmount = new BigNumber('10000000000000000000').toString(10); // 1 ether
-      const slippage = new BigNumber('40000000000000000').toString(10); // 4%
-      const result = await instance.swapEthToLuna(slippage, { from: owner, value: ethAmount });
-      const bptAmount = await BPTinstance.methods.balanceOf(owner).call();
-      console.log('bptAmount: ', divByDecimal(bptAmount));
-    });
-  });
+  //   it("swapEthToLuna", async () => {
+  //     const ethAmount = new BigNumber('10000000000000000000').toString(10); // 1 ether
+  //     const slippage = new BigNumber('40000000000000000').toString(10); // 4%
+  //     const result = await instance.swapEthToLuna(slippage, { from: owner, value: ethAmount });
+  //     const bptAmount = await BPTinstance.methods.balanceOf(owner).call();
+  //     console.log('bptAmount: ', divByDecimal(bptAmount));
+  //   });
+  // });
 
   describe("swapErc20ToLuna", () => {
-    it("calcSwapErc20ToLunaInputs", async () => {
-      const usdc = new BigNumber('10000000000').toString(10); // 1000 twa
-      const slippage = new BigNumber('40000000000000000').toString(10); // 4%
-      const result = await instance.calcSwapErc20ToLunaInputs(_usdc, usdc, poolTokens, slippage);
+    // it("calcSwapErc20ToLunaInputs", async () => {
+    //   const usdc = new BigNumber('10000000000').toString(10); // 1000 twa
+    //   const slippage = new BigNumber('40000000000000000').toString(10); // 4%
+    //   const result = await instance.calcSwapErc20ToLunaInputs(_usdc, usdc, poolTokens, slippage);
 
-      for (let i = 0; i < poolTokens.length; i++) {
-        console.log('tokensInLuna[' + poolTokenSymbols[i] +']: ', divByDecimal(result['tokensInLuna'][i], poolTokenDecimals[i]));
-      }
-      for (let i = 0; i < poolTokens.length; i++) {
-        console.log('ethInUniswap[' + poolTokenSymbols[i] +']: ', divByDecimal(result['ethInUniswap'][i]));
-      }
-      console.log('poolOut: ', divByDecimal(result['poolOut']));
-    });
+    //   for (let i = 0; i < poolTokens.length; i++) {
+    //     console.log('tokensInLuna[' + poolTokenSymbols[i] +']: ', divByDecimal(result['tokensInLuna'][i], poolTokenDecimals[i]));
+    //   }
+    //   for (let i = 0; i < poolTokens.length; i++) {
+    //     console.log('ethInUniswap[' + poolTokenSymbols[i] +']: ', divByDecimal(result['ethInUniswap'][i]));
+    //   }
+    //   console.log('poolOut: ', divByDecimal(result['poolOut']));
+    // });
 
-    it("calcNeedErc20ToPoolOut", async () => {
-      const amountOut = new BigNumber('1000000000000000000').toString(10); // 1 ether
-      const slippage = new BigNumber('40000000000000000').toString(10); // 4%
-      const result = await instance.calcNeedErc20ToPoolOut(_usdc, amountOut, slippage);
+    // it("calcNeedErc20ToPoolOut", async () => {
+    //   const amountOut = new BigNumber('1000000000000000000').toString(10); // 1 ether
+    //   const slippage = new BigNumber('40000000000000000').toString(10); // 4%
+    //   const result = await instance.calcNeedErc20ToPoolOut(_usdc, amountOut, slippage);
 
-      console.log('Erc20 token out: ', divByDecimal(result));
-    });
+    //   console.log('Erc20 token out: ', divByDecimal(result));
+    // });
 
     
-    it("getAmountOutForUniswap", async () => {
-      const uniswapPairFor = await instance.uniswapPairFor(_usdc);
-      const result = await instance.getAmountOutForUniswap(uniswapPairFor, '1000000000', true);
-      console.log('Eth amount out: ', divByDecimal(result['amountOut']));
-    });
+    // it("getAmountOutForUniswap", async () => {
+    //   const uniswapPairFor = await instance.uniswapPairFor(_usdc);
+    //   const result = await instance.getAmountOutForUniswap(uniswapPairFor, '1000000000', true);
+    //   console.log('Eth amount out: ', divByDecimal(result['amountOut']));
+    // });
 
     it("swapErc20ToLuna with twa", async () => {
       const twaOwner = "0x8f012CD662fc117dc21bCbf4A52b5052BF7a4D4E";
@@ -191,103 +191,103 @@ contract("LunaSwap", async (accounts) => {
     });
   });
 
-  describe("swapLunaToEth", () => {
-    it("calcSwapLunaToEthInputs", async () => {
-      const amountIn = new BigNumber('10000000000000000000').toString(10); // 10 bpt
-      const result = await instance.calcSwapLunaToEthInputs(amountIn, poolTokens);
+  // describe("swapLunaToEth", () => {
+  //   it("calcSwapLunaToEthInputs", async () => {
+  //     const amountIn = new BigNumber('10000000000000000000').toString(10); // 10 bpt
+  //     const result = await instance.calcSwapLunaToEthInputs(amountIn, poolTokens);
 
-      for (let i = 0; i < poolTokens.length; i++) {
-        console.log('tokensOutLuna[' + poolTokenSymbols[i] +']: ', divByDecimal(result['tokensOutLuna'][i], poolTokenDecimals[i]));
-      }
-      for (let i = 0; i < poolTokens.length; i++) {
-        console.log('ethOutUniswap[' + poolTokenSymbols[i] +']: ', divByDecimal(result['ethOutUniswap'][i]));
-      }
-      console.log('totalEthOut: ', divByDecimal(result['totalEthOut']));
-    });
+  //     for (let i = 0; i < poolTokens.length; i++) {
+  //       console.log('tokensOutLuna[' + poolTokenSymbols[i] +']: ', divByDecimal(result['tokensOutLuna'][i], poolTokenDecimals[i]));
+  //     }
+  //     for (let i = 0; i < poolTokens.length; i++) {
+  //       console.log('ethOutUniswap[' + poolTokenSymbols[i] +']: ', divByDecimal(result['ethOutUniswap'][i]));
+  //     }
+  //     console.log('totalEthOut: ', divByDecimal(result['totalEthOut']));
+  //   });
 
-    it("swapLunaToEth", async () => {
-      let bptAmount = new BigNumber(await BPTinstance.methods.balanceOf(owner).call());
+  //   it("swapLunaToEth", async () => {
+  //     let bptAmount = new BigNumber(await BPTinstance.methods.balanceOf(owner).call());
 
-      if (bptAmount.gt(new BigNumber('10000000000000000000')))
-        bptAmount = new BigNumber('10000000000000000000');
+  //     if (bptAmount.gt(new BigNumber('10000000000000000000')))
+  //       bptAmount = new BigNumber('10000000000000000000');
       
-      await BPTinstance.methods.approve(instance.address, bptAmount.toString(10)).send({ from: owner });
-      const result = await instance.swapLunaToEth(bptAmount, { from: owner });
+  //     await BPTinstance.methods.approve(instance.address, bptAmount.toString(10)).send({ from: owner });
+  //     const result = await instance.swapLunaToEth(bptAmount, { from: owner });
 
-      const twaBalance = await TWAinstance.methods.balanceOf(instance.address).call();
-      assert.equal(bnToString(twaBalance), bnToString(0));
+  //     const twaBalance = await TWAinstance.methods.balanceOf(instance.address).call();
+  //     assert.equal(bnToString(twaBalance), bnToString(0));
 
-      const linkBalance = await LINKinstance.methods.balanceOf(instance.address).call();
-      assert.equal(bnToString(linkBalance), bnToString(0));
+  //     const linkBalance = await LINKinstance.methods.balanceOf(instance.address).call();
+  //     assert.equal(bnToString(linkBalance), bnToString(0));
 
-      const uniBalance = await UNIinstance.methods.balanceOf(instance.address).call();
-      assert.equal(bnToString(uniBalance), bnToString(0));
+  //     const uniBalance = await UNIinstance.methods.balanceOf(instance.address).call();
+  //     assert.equal(bnToString(uniBalance), bnToString(0));
 
-      const renBTCBalance = await renBTCinstance.methods.balanceOf(instance.address).call();
-      assert.equal(bnToString(renBTCBalance), bnToString(0));
+  //     const renBTCBalance = await renBTCinstance.methods.balanceOf(instance.address).call();
+  //     assert.equal(bnToString(renBTCBalance), bnToString(0));
 
-      const wethBalance = await WETHinstance.methods.balanceOf(instance.address).call();
-      assert.equal(bnToString(wethBalance), bnToString(0));
+  //     const wethBalance = await WETHinstance.methods.balanceOf(instance.address).call();
+  //     assert.equal(bnToString(wethBalance), bnToString(0));
 
-      const twalpBalance = await TWALPinstance.methods.balanceOf(instance.address).call();
-      assert.equal(bnToString(twalpBalance), bnToString(0));
+  //     const twalpBalance = await TWALPinstance.methods.balanceOf(instance.address).call();
+  //     assert.equal(bnToString(twalpBalance), bnToString(0));
 
-      console.log('result: ', result);
-    });
-  });
+  //     console.log('result: ', result);
+  //   });
+  // });
 
-  describe("swapLunaToErc20", () => {
-    it("calcSwapLunaToErc20Inputs", async () => {
-      const amountIn = new BigNumber('10000000000000000000').toString(10); // 10 bpt
-      const result = await instance.calcSwapLunaToErc20Inputs(_usdc, amountIn, poolTokens);
+  // describe("swapLunaToErc20", () => {
+  //   it("calcSwapLunaToErc20Inputs", async () => {
+  //     const amountIn = new BigNumber('10000000000000000000').toString(10); // 10 bpt
+  //     const result = await instance.calcSwapLunaToErc20Inputs(_usdc, amountIn, poolTokens);
 
-      for (let i = 0; i < poolTokens.length; i++) {
-        console.log('tokensOutLuna[' + poolTokenSymbols[i] +']: ', divByDecimal(result['tokensOutLuna'][i], poolTokenDecimals[i]));
-      }
-      for (let i = 0; i < poolTokens.length; i++) {
-        console.log('ethOutUniswap[' + poolTokenSymbols[i] +']: ', divByDecimal(result['ethOutUniswap'][i]));
-      }
-      console.log('totalErc20Out: ', divByDecimal(result['totalErc20Out'], 6));
-    });
+  //     for (let i = 0; i < poolTokens.length; i++) {
+  //       console.log('tokensOutLuna[' + poolTokenSymbols[i] +']: ', divByDecimal(result['tokensOutLuna'][i], poolTokenDecimals[i]));
+  //     }
+  //     for (let i = 0; i < poolTokens.length; i++) {
+  //       console.log('ethOutUniswap[' + poolTokenSymbols[i] +']: ', divByDecimal(result['ethOutUniswap'][i]));
+  //     }
+  //     console.log('totalErc20Out: ', divByDecimal(result['totalErc20Out'], 6));
+  //   });
 
-    it("getAmountOutForUniswap", async () => {
-      const uniswapPairFor = await instance.uniswapPairFor(_twa);
-      const result = await instance.getAmountOutForUniswap(uniswapPairFor, '100000000000000000000', true);
-      console.log('Eth amount out: ', divByDecimal(result['amountOut']));
-      console.log('isInverse: ', result['isInverse']);
-    });
+  //   it("getAmountOutForUniswap", async () => {
+  //     const uniswapPairFor = await instance.uniswapPairFor(_twa);
+  //     const result = await instance.getAmountOutForUniswap(uniswapPairFor, '100000000000000000000', true);
+  //     console.log('Eth amount out: ', divByDecimal(result['amountOut']));
+  //     console.log('isInverse: ', result['isInverse']);
+  //   });
   
-    it("swapLunaToErc20", async () => {
-      let bptAmount = new BigNumber(await BPTinstance.methods.balanceOf(owner).call());
+  //   it("swapLunaToErc20", async () => {
+  //     let bptAmount = new BigNumber(await BPTinstance.methods.balanceOf(owner).call());
 
-      if (bptAmount.gt(new BigNumber('10000000000000000000')))
-        bptAmount = new BigNumber('10000000000000000000');
+  //     if (bptAmount.gt(new BigNumber('10000000000000000000')))
+  //       bptAmount = new BigNumber('10000000000000000000');
 
-      await BPTinstance.methods.approve(instance.address, bptAmount.toString(10)).send({ from: owner });
-      const result = await instance.swapLunaToErc20(_usdc, bptAmount.toString(10), { from: owner });
-      // console.log('erc20Out: ', result);
+  //     await BPTinstance.methods.approve(instance.address, bptAmount.toString(10)).send({ from: owner });
+  //     const result = await instance.swapLunaToErc20(_usdc, bptAmount.toString(10), { from: owner });
+  //     // console.log('erc20Out: ', result);
 
-      const twaBalance = await TWAinstance.methods.balanceOf(instance.address).call();
-      assert.equal(bnToString(twaBalance), bnToString(0));
+  //     const twaBalance = await TWAinstance.methods.balanceOf(instance.address).call();
+  //     assert.equal(bnToString(twaBalance), bnToString(0));
 
-      const linkBalance = await LINKinstance.methods.balanceOf(instance.address).call();
-      assert.equal(bnToString(linkBalance), bnToString(0));
+  //     const linkBalance = await LINKinstance.methods.balanceOf(instance.address).call();
+  //     assert.equal(bnToString(linkBalance), bnToString(0));
 
-      const uniBalance = await UNIinstance.methods.balanceOf(instance.address).call();
-      assert.equal(bnToString(uniBalance), bnToString(0));
+  //     const uniBalance = await UNIinstance.methods.balanceOf(instance.address).call();
+  //     assert.equal(bnToString(uniBalance), bnToString(0));
 
-      const renBTCBalance = await renBTCinstance.methods.balanceOf(instance.address).call();
-      assert.equal(bnToString(renBTCBalance), bnToString(0));
+  //     const renBTCBalance = await renBTCinstance.methods.balanceOf(instance.address).call();
+  //     assert.equal(bnToString(renBTCBalance), bnToString(0));
 
-      const wethBalance = await WETHinstance.methods.balanceOf(instance.address).call();
-      assert.equal(bnToString(wethBalance), bnToString(0));
+  //     const wethBalance = await WETHinstance.methods.balanceOf(instance.address).call();
+  //     assert.equal(bnToString(wethBalance), bnToString(0));
 
-      const twalpBalance = await TWALPinstance.methods.balanceOf(instance.address).call();
-      assert.equal(bnToString(twalpBalance), bnToString(0));
+  //     const twalpBalance = await TWALPinstance.methods.balanceOf(instance.address).call();
+  //     assert.equal(bnToString(twalpBalance), bnToString(0));
 
-      // const result1 = await instance._swapTokenForWethOut(_twa, bnToString(twaBalance), { from: owner });
-      // console.log('result1 :>> ', result1);
+  //     // const result1 = await instance._swapTokenForWethOut(_twa, bnToString(twaBalance), { from: owner });
+  //     // console.log('result1 :>> ', result1);
 
-    });
-  });
+  //   });
+  // });
 });

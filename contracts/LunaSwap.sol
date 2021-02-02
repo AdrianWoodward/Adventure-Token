@@ -617,7 +617,7 @@ contract LunaSwap is Ownable, BNum {
         uint256 erc20OutAmount
     );
 
-    constructor() Ownable() public {
+    constructor() public {
         // Just for test
         weth = TokenInterface(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
         univ2 = TokenInterface(0x748a9631baD6AF6D048aE66e2e6E3F44213Fb1E0);
@@ -679,19 +679,20 @@ contract LunaSwap is Ownable, BNum {
         TokenInterface(_swapToken).safeTransferFrom(msg.sender, address(this), _swapAmount);
         
         if (_swapToken == address(twa)) {
-            // address[] memory path = new address[](2);
-            // path[0] = address(twa);
-            // path[1] = address(weth);
-
-            // twa.approve(address(uniswapV2Router), _swapAmount);
-            // uniswapV2Router.swapExactTokensForETHSupportingFeeOnTransferTokens(
-            //     _swapAmount,
-            //     0, // accept any amount of pair token
-            //     path,
-            //     address(this),
-            //     block.timestamp
-            // );
-            _swapTokenForWethOut(address(twa), _swapAmount);
+            address[] memory path = new address[](2);
+            path[0] = address(twa);
+            path[1] = address(weth);
+            
+            // try to get real twa amount becasue twa burned 1% every transfer
+            uint256 twaAmount = twa.balanceOf(address(this));
+            twa.approve(address(uniswapV2Router), twaAmount);
+            uniswapV2Router.swapExactTokensForETHSupportingFeeOnTransferTokens(
+                twaAmount,
+                0, // accept any amount of pair token
+                path,
+                address(this),
+                block.timestamp
+            );
         } else {
             _swapTokenForWethOut(_swapToken, _swapAmount);
         }
