@@ -39,7 +39,7 @@ And please add your infura id and mnemonic.
 Then, from the root of this project, run the tests:
 
 ```
-sh ./start.hs
+sh ./start.sh
 ```
 
 ```

@@ -1,4 +1,4 @@
 node_modules/
 contracts/artifacts/
 build/
-start.sh
+./start.sh
