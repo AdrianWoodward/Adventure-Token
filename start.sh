@@ -1,1 +1,0 @@
-ganache-cli --fork https://mainnet.infura.io/v3/7b538b6068764c1691ca83d1ecf87c4d --networkId 1001 --gasPrice 0x1 -e 100000000000000000000 --gasLimit 12500000  --mnemonic="concert load couple harbor equip island argue ramp clarify fence smart topic" --max-old-space-size=8192 -u 0x449D939Ea14dE2B3840021d570A2D62cFA46AE51 -u 0x8f012CD662fc117dc21bCbf4A52b5052BF7a4D4E

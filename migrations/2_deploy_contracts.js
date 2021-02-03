@@ -1,7 +1,7 @@
 var Adventure = artifacts.require("./Adventure.sol");
-var LunaFund = artifacts.require("./LunaSwap.sol");
+var LunaSwap = artifacts.require("./LunaSwap.sol");
 
 module.exports = function (deployer) {
-  // await deployer.deploy(Adventure);
-  deployer.deploy(LunaFund);
+  deployer.deploy(Adventure);
+  deployer.deploy(LunaSwap);
 };
