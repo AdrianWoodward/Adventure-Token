@@ -12,6 +12,7 @@ const {
 
 contract("LunaSwap", async (accounts) => {
   const deployer = accounts[0];
+  let instance;
 
   const slippage = new BigNumber('40000000000000000').toString(10); // 4%
   const ethTestAmounts = [
@@ -132,7 +133,7 @@ contract("LunaSwap", async (accounts) => {
         const tokenInstance = contracts[symbol].contract;
         // sending 2 ether to token's owner for gas 
         await web3.eth.sendTransaction({ from: deployer, to: tokenOwner, value: '2000000000000000000' });
-        if (symbol === 'DPI' || symbol === 'WBTC' || symbol === 'renBTC' || symbol === 'DEFI5' || symbol === 'CC10') {
+        if (symbol === 'DPI' || symbol === 'WBTC' || symbol === 'DEFI5' || symbol === 'CC10') {
           for (let i = 0; i < 2; i++) {
             const amount = new BigNumber(tokenTestAmounts[i]).times(new BigNumber(10).pow(decimals)).toString(10);
             await tokenInstance.methods.approve(instance.address, amount).send({ from: tokenOwner });

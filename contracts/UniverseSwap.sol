@@ -546,13 +546,14 @@ interface BPoolInterface is IERC20 {
     function exitPool(uint256 poolAmountIn, uint256[] calldata minAmountsOut) external;
     function getNormalizedWeight(address token) external view returns (uint256);
     function getBalance(address) external view returns (uint256);
+    function getController() external view returns (address);
     function getCurrentTokens() external view returns (address[] memory tokens);
     function getNumTokens() external view returns (uint256);
 }
 
 // Swap contract
 
-contract LunaSwap is Ownable, BNum {
+contract UniverseSwap is Ownable, BNum {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
     using SafeERC20 for TokenInterface;
@@ -560,22 +561,17 @@ contract LunaSwap is Ownable, BNum {
 
     // States
     TokenInterface public weth;
-    TokenInterface public univ2;
+    TokenInterface public twaEthPair;
     TokenInterface public twa;
-    BPoolInterface public lunaBP;
+    BPoolInterface public universeBP;
     IUniswapV2Router02 public uniswapV2Router;
 
     mapping(address => address) public uniswapEthPairByTokenAddress;
     mapping(address => address) public uniswapEthPairToken0;
     mapping(address => bool) public reApproveTokens;
+    
     uint256 public defaultSlippage;
-
-    struct CalculationStruct {
-        uint256 tokenAmount;
-        uint256 ethAmount;
-        uint256 tokenReserve;
-        uint256 ethReserve;
-    }
+    bool public isSmartPool;
 
     // Events
     event SetTokenSetting(
@@ -584,14 +580,14 @@ contract LunaSwap is Ownable, BNum {
         address indexed uniswapPair
     );
     event SetDefaultSlippage(uint256 newDefaultSlippage);
-    event EthToLunaSwap(
+    event EthToUniverseSwap(
         address indexed user,
         uint256 ethInAmount,
         uint256 poolOutAmount
     );
     event OddEth(address indexed user, uint256 amount);
     event OddToken(address indexed user, address indexed token, uint256 amount);
-    event LunaToEthSwap(
+    event UniverseToEthSwap(
         address indexed user,
         uint256 poolInAmount,
         uint256 ethOutAmount
@@ -602,14 +598,14 @@ contract LunaSwap is Ownable, BNum {
         uint256 ethAmount,
         uint256 twaAmount
     );
-    event Erc20ToLunaSwap(
+    event Erc20ToUniverseSwap(
         address indexed user,
         address indexed swapToken,
         uint256 erc20InAmount,
         uint256 ethInAmount,
         uint256 poolOutAmount
     );
-    event LunaToErc20Swap(
+    event UniverseToErc20Swap(
         address indexed user,
         address indexed swapToken,
         uint256 poolInAmount,
@@ -619,18 +615,20 @@ contract LunaSwap is Ownable, BNum {
 
     constructor() public {
         weth = TokenInterface(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
-        univ2 = TokenInterface(0x748a9631baD6AF6D048aE66e2e6E3F44213Fb1E0);
+        twaEthPair = TokenInterface(0x748a9631baD6AF6D048aE66e2e6E3F44213Fb1E0);
         twa = TokenInterface(0xa2EF2757D2eD560c9e3758D1946d7bcccBD5A7fe);
-        lunaBP = BPoolInterface(0x3B260CF977DF1ff8d87960064DaeE2cE491a1B91);
+        universeBP = BPoolInterface(0x2d4D246D8f46D3a2A9Cf6160BCaBbF164C15B36F);
         uniswapV2Router = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
+
         defaultSlippage = 0.04 ether;
+        isSmartPool = true;
     }
 
     receive() external payable {
         if (msg.sender != tx.origin) {
             return;
         }
-        swapEthToLuna(defaultSlippage);
+        swapEthToUniverse(defaultSlippage);
     }
 
     function setTokensSettings(
@@ -659,18 +657,21 @@ contract LunaSwap is Ownable, BNum {
         emit SetDefaultSlippage(_defaultSlippage);
     }
 
-    // swap eth to luna fund tokens contain eth-twa lp, weth, uni, link, renBTC
-    function swapEthToLuna(uint256 _slippage) public payable returns (uint256 poolAmountOut) {
-        address[] memory tokens = lunaBP.getCurrentTokens();
-        (, uint256[] memory ethInUniswap, ) = calcSwapEthToLunaInputs(msg.value, tokens, _slippage);
-        weth.deposit{ value: msg.value }();
-        poolAmountOut = _swapWethToLunaByEthIn(ethInUniswap);
-        uint256 oddEth = _checkAndSendOddToken();
-
-        emit EthToLunaSwap(msg.sender, bsub(msg.value, oddEth), poolAmountOut);
+    function setBPoolAddress(address poolAddress) external onlyOwner {
+        universeBP = BPoolInterface(poolAddress);
     }
 
-    function swapErc20ToLuna(
+    function swapEthToUniverse(uint256 _slippage) public payable returns (uint256 poolAmountOut) {
+        address[] memory tokens = universeBP.getCurrentTokens();
+        (, uint256[] memory ethInUniswap, ) = calcSwapEthToUniverseInputs(msg.value, tokens, _slippage);
+        weth.deposit{ value: msg.value }();
+        poolAmountOut = _swapWethToUniverseByEthIn(ethInUniswap);
+        uint256 oddEth = _checkAndSendOddToken();
+
+        emit EthToUniverseSwap(msg.sender, bsub(msg.value, oddEth), poolAmountOut);
+    }
+
+    function swapErc20ToUniverse(
         address _swapToken,
         uint256 _swapAmount,
         uint256 _slippage
@@ -702,18 +703,18 @@ contract LunaSwap is Ownable, BNum {
             weth.deposit{ value: ethAmount }();
             wethAmount = badd(wethAmount, ethAmount);
         }
-        address[] memory tokens = lunaBP.getCurrentTokens();
+        address[] memory tokens = universeBP.getCurrentTokens();
         uint256[] memory ethInUniswap;
 
-        (, ethInUniswap, ) = calcSwapEthToLunaInputs(wethAmount, tokens, _slippage);
-        poolAmountOut = _swapWethToLunaByEthIn(ethInUniswap);
+        (, ethInUniswap, ) = calcSwapEthToUniverseInputs(wethAmount, tokens, _slippage);
+        poolAmountOut = _swapWethToUniverseByEthIn(ethInUniswap);
         uint256 oddEth = _checkAndSendOddToken();
 
-        emit Erc20ToLunaSwap(msg.sender, _swapToken, _swapAmount, bsub(wethAmount, oddEth), poolAmountOut);
+        emit Erc20ToUniverseSwap(msg.sender, _swapToken, _swapAmount, bsub(wethAmount, oddEth), poolAmountOut);
     }
 
-    function swapLunaToEth(uint256 _poolAmountIn) external returns (uint256 ethOutAmount) {
-        _swapLunaToWeth(_poolAmountIn);
+    function swapUniverseToEth(uint256 _poolAmountIn) external returns (uint256 ethOutAmount) {
+        _swapUniverseToWeth(_poolAmountIn);
         uint256 wethAmount = weth.balanceOf(address(this));
         if (wethAmount > 0) {
             weth.withdraw(wethAmount);
@@ -721,14 +722,14 @@ contract LunaSwap is Ownable, BNum {
         ethOutAmount = address(this).balance;
         msg.sender.transfer(ethOutAmount);
 
-        emit LunaToEthSwap(msg.sender, _poolAmountIn, ethOutAmount);
+        emit UniverseToEthSwap(msg.sender, _poolAmountIn, ethOutAmount);
     }
 
-    function swapLunaToErc20(
+    function swapUniverseToErc20(
         address _swapToken,
         uint256 _poolAmountIn
     ) external returns (uint256 erc20Out) {
-        _swapLunaToWeth(_poolAmountIn);
+        _swapUniverseToWeth(_poolAmountIn);
         uint256 ethAmount = address(this).balance;
         if (ethAmount > 0) {
             weth.deposit{ value: ethAmount }();
@@ -738,26 +739,33 @@ contract LunaSwap is Ownable, BNum {
         erc20Out = TokenInterface(_swapToken).balanceOf(address(this));
         IERC20(_swapToken).safeTransfer(msg.sender, erc20Out);
 
-        emit LunaToErc20Swap(msg.sender, _swapToken, _poolAmountIn, ethOut, erc20Out);
+        emit UniverseToErc20Swap(msg.sender, _swapToken, _poolAmountIn, ethOut, erc20Out);
     }
 
     function calcNeedEthToPoolOut(uint256 _poolAmountOut, uint256 _slippage) public view returns (uint256 ethAmountIn) {
-        uint256 ratio = bdiv(_poolAmountOut, lunaBP.totalSupply());
+        uint256 ratio;
 
-        address[] memory tokens = lunaBP.getCurrentTokens();
+        if (isSmartPool) {
+            BPoolInterface controller = BPoolInterface(universeBP.getController());
+            ratio = bdiv(_poolAmountOut, controller.totalSupply());
+        } else {
+            ratio = bdiv(_poolAmountOut, universeBP.totalSupply());
+        }
+
+        address[] memory tokens = universeBP.getCurrentTokens();
         uint256 len = tokens.length;
-        uint256[] memory tokensInLuna = new uint256[](len);
+        uint256[] memory tokensInUniverse = new uint256[](len);
 
         uint256 totalEthSwap = 0;
         for (uint256 i = 0; i < len; i++) {
-            tokensInLuna[i] = bmul(ratio, lunaBP.getBalance(tokens[i]));
+            tokensInUniverse[i] = bmul(ratio, universeBP.getBalance(tokens[i]));
             if (tokens[i] == address(weth)) {
-                totalEthSwap = badd(totalEthSwap, tokensInLuna[i]);
+                totalEthSwap = badd(totalEthSwap, tokensInUniverse[i]);
             } else {
-                if (tokens[i] == address(univ2)) {
-                    totalEthSwap = badd(totalEthSwap, calcEthReserveOutByLPIn(address(twa), tokensInLuna[i]));
+                if (tokens[i] == address(twaEthPair)) {
+                    totalEthSwap = badd(totalEthSwap, calcEthReserveOutByLPIn(address(twa), tokensInUniverse[i]));
                 } else {
-                    totalEthSwap = badd(totalEthSwap, getAmountInForUniswapValue(uniswapPairFor(tokens[i]), tokensInLuna[i], true));
+                    totalEthSwap = badd(totalEthSwap, getAmountInForUniswapValue(uniswapPairFor(tokens[i]), tokensInUniverse[i], true));
                 }
             }
         }
@@ -780,83 +788,94 @@ contract LunaSwap is Ownable, BNum {
         }
     }
     
-    // swap eth to eth-twa lp, weth, uni, link, renBTC
-    function calcSwapEthToLunaInputs(
+    function calcSwapEthToUniverseInputs(
         uint256 _ethValue,
         address[] memory _tokens,
         uint256 _slippage
-    ) public view returns (uint256[] memory tokensInLuna, uint256[] memory ethInUniswap, uint256 poolOut) {
+    ) public view returns (uint256[] memory tokensInUniverse, uint256[] memory ethInUniswap, uint256 poolOut) {
         uint256 slippageEth = bmul(_ethValue, _slippage);
         uint256 ethValue = bsub(_ethValue, slippageEth);
 
         uint256 totalNormalizedWeight = 0;
         for (uint256 i = 0; i < _tokens.length; i++) {
-            totalNormalizedWeight = badd(totalNormalizedWeight, lunaBP.getNormalizedWeight(_tokens[i]));
+            totalNormalizedWeight = badd(totalNormalizedWeight, universeBP.getNormalizedWeight(_tokens[i]));
         }
         
-        tokensInLuna = new uint256[](_tokens.length);
+        tokensInUniverse = new uint256[](_tokens.length);
         ethInUniswap = new uint256[](_tokens.length);
 
-        uint256 baseTokenWeight = lunaBP.getNormalizedWeight(address(weth));
-        uint256 baseTokenBalance = lunaBP.getBalance(address(weth));
+        uint256 baseTokenWeight = universeBP.getNormalizedWeight(address(weth));
+        uint256 baseTokenBalance = universeBP.getBalance(address(weth));
         uint256 baseTokenAmount = bmul(ethValue, bdiv(baseTokenWeight, totalNormalizedWeight));
         uint256 poolRatio = bdiv(baseTokenAmount, baseTokenBalance);
 
         for (uint256 i = 0; i < _tokens.length; i++) {
             address ithToken = _tokens[i];
-            uint256 tokenWeight = lunaBP.getNormalizedWeight(ithToken);
-            uint256 tokenBalance = lunaBP.getBalance(ithToken);
+            uint256 tokenWeight = universeBP.getNormalizedWeight(ithToken);
+            uint256 tokenBalance = universeBP.getBalance(ithToken);
 
-            tokensInLuna[i] = bmul(poolRatio, tokenBalance);
+            tokensInUniverse[i] = bmul(poolRatio, tokenBalance);
             ethInUniswap[i] = bmul(ethValue, bdiv(tokenWeight, totalNormalizedWeight));
         }
 
-        poolOut = bmul(poolRatio, lunaBP.totalSupply());
+        if (isSmartPool) {
+            BPoolInterface controller = BPoolInterface(universeBP.getController());
+            poolOut = bmul(poolRatio, controller.totalSupply());
+        } else {
+            poolOut = bmul(poolRatio, universeBP.totalSupply());
+        }
     }
 
-    function calcSwapErc20ToLunaInputs(
+    function calcSwapErc20ToUniverseInputs(
         address _swapToken,
         uint256 _swapAmount,
         address[] memory _tokens,
         uint256 _slippage
-    ) external view returns (uint256[] memory tokensInLuna, uint256[] memory ethInUniswap, uint256 poolOut) {
+    ) external view returns (uint256[] memory tokensInUniverse, uint256[] memory ethInUniswap, uint256 poolOut) {
         uint256 ethAmount = getAmountOutForUniswapValue(uniswapPairFor(_swapToken), _swapAmount, true);
-        return calcSwapEthToLunaInputs(ethAmount, _tokens, _slippage);
+        return calcSwapEthToUniverseInputs(ethAmount, _tokens, _slippage);
     }
 
-    function calcSwapLunaToEthInputs(
+    function calcSwapUniverseToEthInputs(
         uint256 _poolAmountIn,
         address[] memory _tokens
-    ) public view returns (uint256[] memory tokensOutLuna, uint256[] memory ethOutUniswap, uint256 totalEthOut) {
-        tokensOutLuna = new uint256[](_tokens.length);
+    ) public view returns (uint256[] memory tokensOutUniverse, uint256[] memory ethOutUniswap, uint256 totalEthOut) {
+        tokensOutUniverse = new uint256[](_tokens.length);
         ethOutUniswap = new uint256[](_tokens.length);
 
-        uint256 poolRatio = bdiv(_poolAmountIn, lunaBP.totalSupply());
+        uint256 poolRatio;
+
+        if (isSmartPool) {
+            BPoolInterface controller = BPoolInterface(universeBP.getController());
+            poolRatio = bdiv(_poolAmountIn, controller.totalSupply());
+        } else {
+            poolRatio = bdiv(_poolAmountIn, universeBP.totalSupply());
+        }
 
         totalEthOut = 0;
         for (uint256 i = 0; i < _tokens.length; i++) {
-            tokensOutLuna[i] = bmul(poolRatio, lunaBP.getBalance(_tokens[i]));
+            tokensOutUniverse[i] = bmul(poolRatio, universeBP.getBalance(_tokens[i]));
             if (_tokens[i] == address(weth)) {
-                ethOutUniswap[i] = tokensOutLuna[i];
+                ethOutUniswap[i] = tokensOutUniverse[i];
             } else {
-                if (_tokens[i] == address(univ2)) {
-                   ethOutUniswap[i] = calcEthReserveOutByLPIn(address(twa), tokensOutLuna[i]);
+                if (_tokens[i] == address(twaEthPair)) {
+                   ethOutUniswap[i] = calcEthReserveOutByLPIn(address(twa), tokensOutUniverse[i]);
                 } else {
-                    ethOutUniswap[i] = getAmountOutForUniswapValue(uniswapPairFor(_tokens[i]), tokensOutLuna[i], true);
+                    ethOutUniswap[i] = getAmountOutForUniswapValue(uniswapPairFor(_tokens[i]), tokensOutUniverse[i], true);
                 }
             }
             totalEthOut = badd(totalEthOut, ethOutUniswap[i]);
         }
     }
 
-    function calcSwapLunaToErc20Inputs(
+    function calcSwapUniverseToErc20Inputs(
         address _swapToken,
         uint256 _poolAmountIn,
         address[] memory _tokens
-    ) external view returns (uint256[] memory tokensOutLuna, uint256[] memory ethOutUniswap, uint256 totalErc20Out) {
+    ) external view returns (uint256[] memory tokensOutUniverse, uint256[] memory ethOutUniswap, uint256 totalErc20Out) {
         uint256 totalEthOut;
 
-        (tokensOutLuna, ethOutUniswap, totalEthOut) = calcSwapLunaToEthInputs(_poolAmountIn, _tokens);
+        (tokensOutUniverse, ethOutUniswap, totalEthOut) = calcSwapUniverseToEthInputs(_poolAmountIn, _tokens);
         (uint256 tokenReserve, uint256 ethReserve, ) = uniswapPairFor(_swapToken).getReserves();
         totalErc20Out = UniswapV2Library.getAmountOut(totalEthOut, ethReserve, tokenReserve);
     }
@@ -868,18 +887,24 @@ contract LunaSwap is Ownable, BNum {
         return ethReserve.mul(lpAmountIn).div(lpTotalSupply);
     }
 
-    // swap weth to Luna tokens
+    // swap weth to Universe tokens
     // Odd ether will return back to sender
-    function _swapWethToLunaByEthIn(uint256[] memory _ethInUniswap) internal returns (uint256 poolAmountOut) {
-        uint256[] memory tokensInLuna;
-        (tokensInLuna, poolAmountOut) = _swapAndApproveTokensForJoin(_ethInUniswap);
+    function _swapWethToUniverseByEthIn(uint256[] memory _ethInUniswap) internal returns (uint256 poolAmountOut) {
+        uint256[] memory tokensInUniverse;
+        (tokensInUniverse, poolAmountOut) = _swapAndApproveTokensForJoin(_ethInUniswap);
 
-        lunaBP.joinPool(poolAmountOut, tokensInLuna);
-        lunaBP.safeTransfer(msg.sender, poolAmountOut);
+        if (isSmartPool) {
+            BPoolInterface controller = BPoolInterface(universeBP.getController());
+            controller.joinPool(poolAmountOut, tokensInUniverse);
+            controller.safeTransfer(msg.sender, poolAmountOut);
+        } else {
+            universeBP.joinPool(poolAmountOut, tokensInUniverse);
+            universeBP.safeTransfer(msg.sender, poolAmountOut);
+        }
     }
 
     function _checkAndSendOddToken() internal returns (uint256 oddEth) {
-        address[] memory tokens = lunaBP.getCurrentTokens();
+        address[] memory tokens = universeBP.getCurrentTokens();
         for (uint256 i = 0; i < tokens.length; i++) {
             if (tokens[i] != address(weth)) {
                 uint256 oddToken = TokenInterface(tokens[i]).balanceOf(address(this));
@@ -904,24 +929,24 @@ contract LunaSwap is Ownable, BNum {
     // prepare the joining to balancer pool
     function _swapAndApproveTokensForJoin(uint256[] memory ethInUniswap)
         internal
-        returns (uint256[] memory tokensInLuna, uint256 poolAmountOut)
+        returns (uint256[] memory tokensInUniverse, uint256 poolAmountOut)
     {
         uint256 poolRatio = 0;
-        address[] memory tokens = lunaBP.getCurrentTokens();
-        tokensInLuna = new uint256[](tokens.length);
+        address[] memory tokens = universeBP.getCurrentTokens();
+        tokensInUniverse = new uint256[](tokens.length);
 
         for (uint256 i = 0; i < tokens.length; i++) {
             if (tokens[i] == address(weth)) {
-                tokensInLuna[i] = ethInUniswap[i];
-            } else if (tokens[i] == address(univ2)) {
-                tokensInLuna[i] = buyTwaAndAddLiquidityToUniswapV2(ethInUniswap[i]);
+                tokensInUniverse[i] = ethInUniswap[i];
+            } else if (tokens[i] == address(twaEthPair)) {
+                tokensInUniverse[i] = buyTwaAndAddLiquidityToUniswapV2(ethInUniswap[i]);
             } else {
                 _swapWethForTokenOut(tokens[i], ethInUniswap[i]);
-                tokensInLuna[i] = TokenInterface(tokens[i]).balanceOf(address(this));
+                tokensInUniverse[i] = TokenInterface(tokens[i]).balanceOf(address(this));
             }
             
-            uint256 tokenBalance = lunaBP.getBalance(tokens[i]);
-            uint256 minRatio = bdiv(tokensInLuna[i], tokenBalance);
+            uint256 tokenBalance = universeBP.getBalance(tokens[i]);
+            uint256 minRatio = bdiv(tokensInUniverse[i], tokenBalance);
 
             if (poolRatio == 0 || poolRatio > minRatio) {
                 poolRatio = minRatio;
@@ -929,15 +954,28 @@ contract LunaSwap is Ownable, BNum {
         }
 
         for (uint256 i = 0; i < tokens.length; i++) {
-            tokensInLuna[i] = bmul(poolRatio, lunaBP.getBalance(tokens[i]));
+            tokensInUniverse[i] = bmul(poolRatio, universeBP.getBalance(tokens[i]));
 
-            if (reApproveTokens[tokens[i]]) {
-                TokenInterface(tokens[i]).approve(address(lunaBP), 0);
+            if (isSmartPool) {
+                address controller = universeBP.getController();
+                if (reApproveTokens[tokens[i]]) {
+                    TokenInterface(tokens[i]).approve(controller, 0);
+                }
+                TokenInterface(tokens[i]).approve(controller, tokensInUniverse[i]);
+            } else {
+                if (reApproveTokens[tokens[i]]) {
+                    TokenInterface(tokens[i]).approve(address(universeBP), 0);
+                }
+                TokenInterface(tokens[i]).approve(address(universeBP), tokensInUniverse[i]);
             }
-            TokenInterface(tokens[i]).approve(address(lunaBP), tokensInLuna[i]);
         }
 
-        poolAmountOut = bmul(bsub(poolRatio, 1e3), lunaBP.totalSupply());
+        if (isSmartPool) {
+            BPoolInterface controller = BPoolInterface(universeBP.getController());
+            poolAmountOut = bmul(bsub(poolRatio, 1e3), controller.totalSupply());
+        } else {
+            poolAmountOut = bmul(bsub(poolRatio, 1e3), universeBP.totalSupply());
+        }
     }
 
     function buyTwaAndAddLiquidityToUniswapV2(uint256 _ethAmountIn) public returns (uint256 liquidity) {
@@ -968,23 +1006,29 @@ contract LunaSwap is Ownable, BNum {
         emit BuyTwaAndAddLiquidityToUniswapV2(_msgSender(), _ethAmountIn, ethAmountOut, tokenAmountOut);
     }
     
-    function _swapLunaToWeth(uint256 _poolAmountIn) internal {
-        address[] memory tokens = lunaBP.getCurrentTokens();
+    function _swapUniverseToWeth(uint256 _poolAmountIn) internal {
+        address[] memory tokens = universeBP.getCurrentTokens();
         uint256 len = tokens.length;
 
-        (uint256[] memory tokensOutLuna, ,) = calcSwapLunaToEthInputs(_poolAmountIn, tokens);
-
-        lunaBP.safeTransferFrom(msg.sender, address(this), _poolAmountIn);
-        lunaBP.approve(address(lunaBP), _poolAmountIn);
-        lunaBP.exitPool(_poolAmountIn, tokensOutLuna);
+        uint256[] memory tokensOutUniverse = new uint256[](8);
+        if (isSmartPool) {
+            BPoolInterface controller = BPoolInterface(universeBP.getController());
+            controller.safeTransferFrom(msg.sender, address(this), _poolAmountIn);
+            controller.approve(address(controller), _poolAmountIn);
+            controller.exitPool(_poolAmountIn, tokensOutUniverse);
+        } else {
+            universeBP.safeTransferFrom(msg.sender, address(this), _poolAmountIn);
+            universeBP.approve(address(universeBP), _poolAmountIn);
+            universeBP.exitPool(_poolAmountIn, tokensOutUniverse);
+        }
 
         for (uint256 i = 0; i < len; i++) {
-            if (tokens[i] == address(univ2)) {
-                tokensOutLuna[i] = univ2.balanceOf(address(this));
-                univ2.approve(address(uniswapV2Router), tokensOutLuna[i]);
+            if (tokens[i] == address(twaEthPair)) {
+                tokensOutUniverse[i] = twaEthPair.balanceOf(address(this));
+                twaEthPair.approve(address(uniswapV2Router), tokensOutUniverse[i]);
                 uniswapV2Router.removeLiquidityETHSupportingFeeOnTransferTokens(
                     address(twa),
-                    tokensOutLuna[i],
+                    tokensOutUniverse[i],
                     0,
                     0,
                     address(this),
@@ -1008,8 +1052,8 @@ contract LunaSwap is Ownable, BNum {
                 }
             } else {
                 if (tokens[i] != address(weth)) {
-                    tokensOutLuna[i] = TokenInterface(tokens[i]).balanceOf(address(this));
-                    _swapTokenForWethOut(tokens[i], tokensOutLuna[i]);
+                    tokensOutUniverse[i] = TokenInterface(tokens[i]).balanceOf(address(this));
+                    _swapTokenForWethOut(tokens[i], tokensOutUniverse[i]);
                 }
             }
         }
